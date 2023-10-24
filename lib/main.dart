@@ -4,6 +4,19 @@ void main() {
   runApp(const MyApp());
 }
 
+class Exercise {
+  String name = "";
+  String description = "";
+
+  Exercise(this.name, this.description);
+}
+
+List<Exercise> exercises = [
+  Exercise("Rosca direta", "Um exercício para bíceps"),
+  Exercise("Rosca inversa", "Um exercício para antebraço"),
+  Exercise("Agachamento livre", "Um exercício para pernas"),
+];
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -20,6 +33,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const HomePage(),
         '/exercises': (context) => const Exercises(),
+        '/new-exercise': (context) => const NewExercise(),
       },
     );
   }
@@ -48,20 +62,94 @@ class Exercises extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-        child: GridView.count(
-            crossAxisCount: 2,
-            childAspectRatio: (1 / .3),
-            children: [
-          Column(
-            children: [Text('Remada'), Text('Um exercício para costas')],
-          ),
-          Column(
-            children: [Text('Remada'), Text('Um exercício para costas')],
-          ),
-          Column(
-            children: [Text('Remada'), Text('Um exercício para costas')],
-          ),
-        ]));
+      child: GridView.count(
+        crossAxisCount: 2,
+        childAspectRatio: (1 / .3),
+        children: <Widget>[
+          ...exercises
+              .map((exercise) => Column(
+                    children: [Text(exercise.name), Text(exercise.description)],
+                  ))
+              .toList(),
+          ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/new-exercise');
+              },
+              child: Text('Novo exercício'))
+        ],
+      ),
+    );
+  }
+}
+
+class NewExercise extends StatefulWidget {
+  const NewExercise({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _NewExerciseState();
+}
+
+class ExerciseData {
+  String name = "";
+  String description = "";
+}
+
+class _NewExerciseState extends State {
+  ExerciseData exerciseData = ExerciseData();
+  GlobalKey<FormState> key = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: Form(
+        key: key,
+        child: Column(
+          children: [
+            TextFormField(
+              validator: (String? value) {
+                if (value == null || value.isEmpty) {
+                  return "Informe o exercício";
+                }
+                return null;
+              },
+              onSaved: (String? value) {
+                if (value == null) return;
+
+                exerciseData.name = value;
+              },
+              decoration: const InputDecoration(
+                  hintText: "Supino", labelText: "Exercício"),
+            ),
+            TextFormField(
+              validator: (String? value) {
+                if (value == null || value.isEmpty) {
+                  return "Informe a descrição o exercício";
+                }
+                return null;
+              },
+              onSaved: (String? value) {
+                if (value == null) return;
+
+                exerciseData.description = value;
+              },
+              decoration: const InputDecoration(
+                  hintText: "Um exercício para ficar fortinho",
+                  labelText: "Descrição"),
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  if (key.currentState!.validate()) {
+                    key.currentState!.save();
+                    exercises.add(
+                        Exercise(exerciseData.name, exerciseData.description));
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Inserir'))
+          ],
+        ),
+      ),
+    );
   }
 }
 
