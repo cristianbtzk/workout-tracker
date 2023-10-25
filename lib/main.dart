@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:gym_tracker/theme.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const MyApp());
+main() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  runApp(ChangeNotifierProvider(
+      child: const MyApp(),
+      create: (BuildContext context) =>
+          ThemeProvider(isDarkMode: prefs.getBool('isDarkTheme') ?? false)));
 }
 
 class Exercise {
@@ -23,19 +31,27 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      initialRoute: '/',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      routes: {
-        '/': (context) => const HomePage(),
-        '/exercises': (context) => const Exercises(),
-        '/new-exercise': (context) => const NewExercise(),
-      },
-    );
+    return Consumer<ThemeProvider>(builder: (context, themeProvider, child) {
+      return MaterialApp(
+        title: 'Flutter Demo',
+        initialRoute: '/',
+        theme: ThemeData(
+          brightness: Brightness.light,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          /* dark theme settings */
+        ),
+        themeMode: themeProvider.getTheme,
+        routes: {
+          '/': (context) => const HomePage(),
+          '/exercises': (context) => const Exercises(),
+          '/new-exercise': (context) => const NewExercise(),
+        },
+      );
+    });
   }
 }
 
