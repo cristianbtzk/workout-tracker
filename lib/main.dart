@@ -1,15 +1,24 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:gym_tracker/theme.dart';
 import 'package:provider/provider.dart';
+/* import 'package:gym_tracker/theme.dart';
+import 'package:provider/provider.dart'; */
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-main() async {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  runApp(ChangeNotifierProvider(
-      child: const MyApp(),
+  FlutterNativeSplash.remove();
+  runApp(
+    ChangeNotifierProvider(
       create: (BuildContext context) =>
-          ThemeProvider(isDarkMode: prefs.getBool('isDarkTheme') ?? false)));
+          ThemeProvider(isDarkMode: prefs.getBool('isDarkTheme') ?? false),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class Exercise {
@@ -60,14 +69,51 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/exercises');
-            },
-            child: const Text('Ver exercícios'))
-      ],
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: 70,
+                width: 300,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/exercises');
+                  },
+                  child: const Text(
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                    'Ver exercícios',
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 70,
+                width: 300,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ThemeProvider themeProvider = Provider.of<ThemeProvider>(
+                      context,
+                      listen: false,
+                    );
+
+                    themeProvider.swapTheme();
+                  },
+                  child: const Text(
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                    'Alterar tema',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -77,22 +123,33 @@ class Exercises extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: GridView.count(
-        crossAxisCount: 2,
-        childAspectRatio: (1 / .3),
-        children: <Widget>[
-          ...exercises
-              .map((exercise) => Column(
-                    children: [Text(exercise.name), Text(exercise.description)],
-                  ))
-              .toList(),
-          ElevatedButton(
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            GridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: (1 / .3),
+              shrinkWrap: true,
+              children: <Widget>[
+                ...exercises
+                    .map((exercise) => Column(
+                          children: [
+                            Text(exercise.name),
+                            Text(exercise.description)
+                          ],
+                        ))
+                    .toList(),
+              ],
+            ),
+            ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/new-exercise');
               },
-              child: Text('Novo exercício'))
-        ],
+              child: Text('Novo exercício'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -119,50 +176,53 @@ class _NewExerciseState extends State {
     return Material(
       child: Form(
         key: key,
-        child: Column(
-          children: [
-            TextFormField(
-              validator: (String? value) {
-                if (value == null || value.isEmpty) {
-                  return "Informe o exercício";
-                }
-                return null;
-              },
-              onSaved: (String? value) {
-                if (value == null) return;
-
-                exerciseData.name = value;
-              },
-              decoration: const InputDecoration(
-                  hintText: "Supino", labelText: "Exercício"),
-            ),
-            TextFormField(
-              validator: (String? value) {
-                if (value == null || value.isEmpty) {
-                  return "Informe a descrição o exercício";
-                }
-                return null;
-              },
-              onSaved: (String? value) {
-                if (value == null) return;
-
-                exerciseData.description = value;
-              },
-              decoration: const InputDecoration(
-                  hintText: "Um exercício para ficar fortinho",
-                  labelText: "Descrição"),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  if (key.currentState!.validate()) {
-                    key.currentState!.save();
-                    exercises.add(
-                        Exercise(exerciseData.name, exerciseData.description));
-                    Navigator.pop(context);
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              TextFormField(
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Informe o exercício";
                   }
+                  return null;
                 },
-                child: const Text('Inserir'))
-          ],
+                onSaved: (String? value) {
+                  if (value == null) return;
+
+                  exerciseData.name = value;
+                },
+                decoration: const InputDecoration(
+                    hintText: "Supino", labelText: "Exercício"),
+              ),
+              TextFormField(
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Informe a descrição o exercício";
+                  }
+                  return null;
+                },
+                onSaved: (String? value) {
+                  if (value == null) return;
+
+                  exerciseData.description = value;
+                },
+                decoration: const InputDecoration(
+                    hintText: "Um exercício para ficar fortinho",
+                    labelText: "Descrição"),
+              ),
+              ElevatedButton(
+                  onPressed: () {
+                    if (key.currentState!.validate()) {
+                      key.currentState!.save();
+                      exercises.add(Exercise(
+                          exerciseData.name, exerciseData.description));
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Inserir'))
+            ],
+          ),
         ),
       ),
     );
