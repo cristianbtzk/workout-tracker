@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:gym_tracker/theme.dart';
 import 'package:provider/provider.dart';
@@ -28,12 +26,6 @@ class Exercise {
   Exercise(this.name, this.description);
 }
 
-List<Exercise> exercises = [
-  Exercise("Rosca direta", "Um exercício para bíceps"),
-  Exercise("Rosca inversa", "Um exercício para antebraço"),
-  Exercise("Agachamento livre", "Um exercício para pernas"),
-];
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -53,10 +45,11 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
           /* dark theme settings */
         ),
+        debugShowCheckedModeBanner: false,
         themeMode: themeProvider.getTheme,
         routes: {
           '/': (context) => const HomePage(),
-          '/exercises': (context) => const Exercises(),
+          '/exercises': (context) => Exercises(),
           '/new-exercise': (context) => const NewExercise(),
         },
       );
@@ -118,37 +111,74 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class Exercises extends StatelessWidget {
+class Exercises extends StatefulWidget {
   const Exercises({super.key});
 
   @override
+  ExercisesState createState() => ExercisesState();
+}
+
+class ExercisesState extends State<Exercises> {
+  List<Exercise> exercises = [];
+
+  Future<void> _navigateAndUpdateState(BuildContext context) async {
+    Exercise result =
+        await Navigator.pushNamed(context, '/new-exercise') as Exercise;
+    setState(() {
+      exercises.add(result);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            GridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: (1 / .3),
-              shrinkWrap: true,
-              children: <Widget>[
-                ...exercises
-                    .map((exercise) => Column(
-                          children: [
-                            Text(exercise.name),
-                            Text(exercise.description)
-                          ],
-                        ))
-                    .toList(),
-              ],
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/new-exercise');
-              },
-              child: Text('Novo exercício'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 3,
+                mainAxisSpacing: 3,
+                childAspectRatio: (1 / .3),
+                shrinkWrap: true,
+                children: <Widget>[
+                  ...exercises
+                      .map(
+                        (exercise) => Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                alignment: Alignment.center,
+                                padding: EdgeInsets.all(8.0),
+                                width: double.infinity,
+                                color: Colors.grey[600],
+                                child: Text(exercise.name),
+                              ),
+                              Text(exercise.description),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ],
+              ),
+              Container(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _navigateAndUpdateState(context);
+                  },
+                  child: Text('Novo exercício'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -215,9 +245,9 @@ class _NewExerciseState extends State {
                   onPressed: () {
                     if (key.currentState!.validate()) {
                       key.currentState!.save();
-                      exercises.add(Exercise(
-                          exerciseData.name, exerciseData.description));
-                      Navigator.pop(context);
+                      Exercise newExercise =
+                          Exercise(exerciseData.name, exerciseData.description);
+                      Navigator.pop(context, newExercise);
                     }
                   },
                   child: const Text('Inserir'))
