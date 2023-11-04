@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gym_tracker/database.dart';
+import 'package:gym_tracker/exercise.dart';
 import 'package:gym_tracker/theme.dart';
 import 'package:provider/provider.dart';
 /* import 'package:gym_tracker/theme.dart';
@@ -17,13 +19,6 @@ Future<void> main() async {
       child: const MyApp(),
     ),
   );
-}
-
-class Exercise {
-  String name = "";
-  String description = "";
-
-  Exercise(this.name, this.description);
 }
 
 class MyApp extends StatelessWidget {
@@ -119,7 +114,20 @@ class Exercises extends StatefulWidget {
 }
 
 class ExercisesState extends State<Exercises> {
+  late DatabaseHandler handler;
   List<Exercise> exercises = [];
+
+  @override
+  void initState() {
+    super.initState();
+    handler = DatabaseHandler();
+    handler.initializeDB().whenComplete(() async {
+      List<Exercise> dbExercises = await handler.retrieveExercises();
+      setState(() {
+        exercises = dbExercises;
+      });
+    });
+  }
 
   Future<void> _navigateAndUpdateState(BuildContext context) async {
     Exercise result =
@@ -131,7 +139,6 @@ class ExercisesState extends State<Exercises> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -200,6 +207,14 @@ class ExerciseData {
 class _NewExerciseState extends State {
   ExerciseData exerciseData = ExerciseData();
   GlobalKey<FormState> key = GlobalKey<FormState>();
+  late DatabaseHandler handler;
+
+  @override
+  void initState() {
+    super.initState();
+    handler = DatabaseHandler();
+    handler.initializeDB();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -242,11 +257,14 @@ class _NewExerciseState extends State {
                     labelText: "Descrição"),
               ),
               ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (key.currentState!.validate()) {
                       key.currentState!.save();
-                      Exercise newExercise =
-                          Exercise(exerciseData.name, exerciseData.description);
+                      Exercise newExercise = Exercise(
+                          name: exerciseData.name,
+                          description: exerciseData.description);
+
+                      await handler.insertExercise(newExercise);
                       Navigator.pop(context, newExercise);
                     }
                   },
